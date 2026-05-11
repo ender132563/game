@@ -22,7 +22,8 @@ type State = {
     BulletY : int 
     PlayerX : int 
     PlayerY : int 
-    PlayerBulletPosition : int
+    PlayerBulletXPosition : int
+    PlayerBulletYPosition : int
     triggerBullet : bool
     redrawBullet : bool
     redrawScreen : bool
@@ -34,12 +35,13 @@ type State = {
 let InitialState = {
     programState = Running
     AlienState = Active
-    AlienY = 0
+    AlienY = Console.BufferWidth/2
     BulletX = Console.BufferWidth-1
     BulletY = Console.BufferHeight/2
     PlayerX = Console.BufferWidth/4
     PlayerY = Console.BufferHeight/2
-    PlayerBulletPosition = Console.BufferWidth/2
+    PlayerBulletXPosition = Console.BufferWidth/2
+    PlayerBulletYPosition = 0
     triggerBullet = false
     redrawBullet = false
     redrawScreen = true
@@ -59,13 +61,14 @@ let shoot state =
     match state.triggerBullet with
     | true -> 
         if state.tick % 1 = 0 then
-            {state with PlayerBulletPosition = min (Console.BufferWidth-1)(state.PlayerBulletPosition+1);redrawScreen = true}
+            {state with PlayerBulletXPosition = min (Console.BufferWidth-1)(state.PlayerBulletXPosition+1);redrawScreen = true}
         else 
             state
     | _ -> state 
 let updateBulletPosition state = 
+    let startPosition = state.PlayerY
     if state.redrawBullet then 
-        displayMessage state.PlayerBulletPosition state.PlayerY ConsoleColor.Cyan "=>"
+        displayMessage state.PlayerBulletXPosition startPosition ConsoleColor.Cyan "=>"
         
     
 
@@ -77,7 +80,7 @@ let proccessPlayerKeyboard key state =
         | ConsoleKey.UpArrow -> {state with PlayerY = max 0 (state.PlayerY-1) }
         | ConsoleKey.DownArrow -> {state with PlayerY = min (Console.BufferWidth-1)(state.PlayerY+1) }
         | ConsoleKey.Escape -> {state with programState = Terminated}
-        | ConsoleKey.Spacebar -> {state with redrawBullet = true;triggerBullet = true}
+        | ConsoleKey.Spacebar -> {state with redrawBullet = true;triggerBullet = true;PlayerBulletXPosition = state.PlayerX+1}
         | _ -> state
     if state <> newState then 
         {newState with redrawScreen = true}
