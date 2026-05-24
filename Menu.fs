@@ -9,6 +9,7 @@ open System.Threading
 //
 open Generic.Utils
 
+Console.Clear()
 type MenuState =
 | Active
 | Terminated
@@ -21,32 +22,45 @@ type State<'C> = {
     CurSorSelection: int
     CursorX: int
     Commands: ('C * string) array
+    color : ConsoleColor
     RedrawScreen: bool
     cursorSymbol : string
+    title : string
+    titleColor : ConsoleColor
+    titlePosition : int * int
 }
 
-let initialState x y command Cursor = {
+let initialState x y command Cursor color title titleColor TitlePosition= {
     MenuState = Active
     X = x
     Y = y
     CursorX = x-3
     CurSorSelection = 0
     Commands = command
+    color = color
     RedrawScreen = true
     cursorSymbol = Cursor
+    title = title
+    titleColor = titleColor
+    titlePosition = TitlePosition
 }
 
 let drawMenu state =
     state.Commands
     |> Array.iteri (fun i (_,legend) ->
-        displayMessage state.X (state.Y+i) ConsoleColor.Cyan legend
+        displayMessage state.X (state.Y+i) state.color legend
     )
 
     displayMessage state.CursorX (state.Y+state.CurSorSelection) ConsoleColor.Yellow state.cursorSymbol
+let drawTitle state =
+
+    displayMessage (fst state.titlePosition) (snd state.titlePosition) state.titleColor state.title
+
 let redrawScreen state =
     if state.RedrawScreen then
         Console.Clear()
-        state |> drawMenu
+        drawTitle state
+        drawMenu state
         {state with RedrawScreen = false}
     else
         state
@@ -90,12 +104,12 @@ let rec mainLoop state =
     else
         state
 
-let genericMenu x y command cursorSymbol=
+let genericMenu x y command cursorSymbol color title titleColor titlePosition =
     let oldForeground = Console.ForegroundColor
     Console.CursorVisible <- false
 
     let state =
-        initialState x y command cursorSymbol
+        initialState x y command cursorSymbol color title titleColor titlePosition
         |> mainLoop 
 
     Console.CursorVisible <- true

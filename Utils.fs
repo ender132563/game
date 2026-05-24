@@ -33,9 +33,12 @@ let createMainLoop pipeline isProgramRunning  redrawPipeline keypipeline needToR
 let displayMessage x y color (msg:string) =
     Console.SetCursorPosition (x,y)
     Console.ForegroundColor <- color 
-    Console.WriteLine msg 
+    Console.Write msg 
 let displayMessageRight y color (msg:String) =
     let x = Console.BufferWidth - msg.Length 
     displayMessage x y color msg 
     
 let path = "playerProgress.json"
+let savingPath = "savedProgress.json"
+let maxY = Console.BufferHeight-1
+let maxX = Console.BufferWidth-1

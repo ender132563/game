@@ -46,9 +46,8 @@ let rec routerLoop state =
     | Terminated -> Terminated
 
     |> fun s -> 
-        if s = Terminated then 
-            ()
-        else routerLoop s
+        if s <> Terminated then 
+            routerLoop s
 
 
 let init () =

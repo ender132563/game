@@ -4,13 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Utils.fs" />
+    
+    <Compile Include="Utils.fs" /><Compile Include="Titles.fs" />
     <Compile Include="Menu.fs" />
     <Compile Include="Rock.fs" />
     <Compile Include="MainMenu.fs" />
     <Compile Include="PauseMenu.fs" />
-    <Compile Include="Game.fs" /><Compile Include="Router.fs" />
-    
+    <Compile Include="Game.fs" />
+    <Compile Include="Router.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
