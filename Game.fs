@@ -4,49 +4,60 @@ open Generic.Utils
 open System.IO
 open System.Text.Json
 open System.Text.Json.Serialization
-let path = "playerProgress.json"
+
 
 type ProgramState = 
 | Running
 | Terminated
 
-type AlienState =
-| Active
-| Dead 
+type spriteState =
+| Alive
+| Hit
 
+type misile = {
+    x : int
+    y : int
+}
 type State = {
     programState : ProgramState
-    AlienState : AlienState
-    AlienY : int 
-    BulletX : int 
-    BulletY : int 
+    playerState : spriteState
+    enemyState : spriteState
+    enemyX : int
+    enemyY : int 
+    PlayerMisiles : misile list
+    enemyMisiles : misile list
     PlayerX : int 
     PlayerY : int 
-    PlayerBulletXPosition : int
-    PlayerBulletYPosition : int
-    triggerBullet : bool
-    redrawBullet : bool
     redrawScreen : bool
     tick : int
     clock : int 
-
+    enemyDir : int
+    enemyColision : int
+    playerColision : int
+    canShoot : bool
+    score: int
+    lifes: int
 }
-// alienY playerY 
+    
 let InitialState = {
     programState = Running
-    AlienState = Active
-    AlienY = Console.BufferWidth/2
-    BulletX = Console.BufferWidth-1
-    BulletY = Console.BufferHeight/2
+    playerState = Alive
+    enemyState = Alive
+    enemyX = Console.BufferWidth-2
+    enemyY = 0
+    PlayerMisiles = []
+    enemyMisiles = []
     PlayerX = Console.BufferWidth/4
     PlayerY = Console.BufferHeight/2
-    PlayerBulletXPosition = Console.BufferWidth/2
-    PlayerBulletYPosition = 0
-    triggerBullet = false
-    redrawBullet = false
     redrawScreen = true
     tick = -1 
     clock= 0
+    enemyDir = 1
+    enemyColision = 0
+    playerColision = 0
+    canShoot = true
+    score = 0
+    lifes = 3
 }
 
 let updateTick state =
@@ -56,58 +67,191 @@ let updateClock state =
         {state with clock = state.clock+1;redrawScreen = true}
     else state 
 let drawClock state = 
-    displayMessageRight 0 ConsoleColor.Yellow $"{state.clock}"
-let shoot state = 
-    match state.triggerBullet with
-    | true -> 
-        if state.tick % 1 = 0 then
-            {state with PlayerBulletXPosition = min (Console.BufferWidth-1)(state.PlayerBulletXPosition+1);redrawScreen = true}
-        else 
-            state
-    | _ -> state 
-let updateBulletPosition state = 
-    let startPosition = state.PlayerY
-    if state.redrawBullet then 
-        displayMessage state.PlayerBulletXPosition startPosition ConsoleColor.Cyan "=>"
-        
-    
+    displayMessage (maxX-8) 0 ConsoleColor.Yellow $"Time: {state.clock}"
 
-let proccessPlayerKeyboard key state =
-    let newState =
-        match key with 
-        | ConsoleKey.LeftArrow -> {state with PlayerX = max 0 (state.PlayerX-1) }
-        | ConsoleKey.RightArrow -> {state with PlayerX = min (Console.BufferWidth-1) (state.PlayerX+1) }
-        | ConsoleKey.UpArrow -> {state with PlayerY = max 0 (state.PlayerY-1) }
-        | ConsoleKey.DownArrow -> {state with PlayerY = min (Console.BufferWidth-1)(state.PlayerY+1) }
-        | ConsoleKey.Escape -> {state with programState = Terminated}
-        | ConsoleKey.Spacebar -> {state with redrawBullet = true;triggerBullet = true;PlayerBulletXPosition = state.PlayerX+1}
-        | _ -> state
-    if state <> newState then 
-        {newState with redrawScreen = true}
-    else state
+let drawEnemy state =
+    let sprite =
+        if state.enemyState = Alive then
+            "👾"
+        else "💥"
+    displayMessage state.enemyX state.enemyY ConsoleColor.Black sprite
 
 let drawPlayer (state:State) =
-    displayMessage state.PlayerX state.PlayerY ConsoleColor.Black "👽"
+    let sprite = 
+        if state.playerState = Alive then 
+            "👽" 
+        else "⚰️"
+    displayMessage state.PlayerX state.PlayerY ConsoleColor.Black sprite
+let drawScore state =
+    displayMessage (maxX/2) 0 ConsoleColor.Yellow $"Score: {state.score}"
+let drawLife state =
+    displayMessage 5 0 ConsoleColor.Yellow $"Lifes: {state.lifes}"
+        
+let detectPlayerColission state =
+    state.enemyMisiles 
+    |> Seq.filter (fun misile -> 
+        not (misile.x = state.PlayerX-1 && misile.y = state.PlayerY))
+    |> Seq.toList
+    |> fun newMisiles -> 
+        if newMisiles.Length <> state.enemyMisiles.Length then
+            {state with 
+                playerState = Hit
+                enemyMisiles = newMisiles
+                redrawScreen=true
+                playerColision=state.tick
+                lifes = max 0 state.lifes-1
+                }
+        else 
+            state
+let detectEnemyColission state =
+    state.PlayerMisiles 
+    |> Seq.filter (fun misile -> 
+        not (misile.x = state.enemyX-1 && misile.y = state.enemyY))
+    |> Seq.toList 
+    |> fun newMisiles -> 
+        if newMisiles.Length <> state.PlayerMisiles.Length then
+            {state with 
+                enemyState = Hit
+                PlayerMisiles = newMisiles
+                redrawScreen=true
+                enemyColision=state.tick
+                score = state.score+1
+                }
+        else 
+            state
+
+let resetAlien state =
+    if state.playerState = Hit then 
+        let tiempo = state.tick-state.playerColision
+        if tiempo >= 160 then 
+            {state with playerState=Alive;redrawScreen=true}
+        else
+            state
+    else
+        state
+
+let resetEnemigo state =
+    if state.enemyState = Hit then 
+        let tiempo = state.tick-state.enemyColision
+        if tiempo >= 160 then 
+            {state with enemyState=Alive;redrawScreen=true}
+        else
+            state
+    else
+        state
+let agregarMisilenemigo state =
+    if state.enemyState = Alive && state.tick % 10 = 0 then 
+        let newMisile = {
+            x = state.enemyX
+            y = state.enemyY
+        }
+        
+        {state with  enemyMisiles = newMisile :: state.enemyMisiles}
+    else state
+let updatePlayerMisile state =
+    if state.PlayerMisiles <> [] then 
+        state.PlayerMisiles
+        |> Seq.map (fun misil -> {misil with x=misil.x+1})
+        |> Seq.filter (fun misil -> misil.x < Console.BufferWidth-2)
+        |> Seq.toList
+        |> fun nuevosMisiles ->
+            {state with PlayerMisiles = nuevosMisiles;redrawScreen=true} 
+    else state
+let updateEnemyMisiles state =
+    if state.enemyMisiles <> [] then 
+        state.enemyMisiles
+        |> Seq.map (fun misil -> {misil with x=misil.x-1})
+        |> Seq.filter (fun misil -> misil.x >= 0)
+        |> Seq.toList
+        |> fun nuevosMisiles ->
+            {state with enemyMisiles = nuevosMisiles;redrawScreen=true} 
+    else
+        state
+
+let drawPlayerBullet state = 
+    state.PlayerMisiles
+    |> List.iter (fun misile ->
+        displayMessage misile.x misile.y  ConsoleColor.Cyan "=>")
+let drawEnemyBullet state = 
+    state.enemyMisiles
+    |> List.iter (fun misile ->
+        displayMessage misile.x misile.y  ConsoleColor.Cyan "<=")
+
+        
+let proccessGameKeyboard key state =
+    match key with
+    | ConsoleKey.Escape -> {state with programState = Terminated} 
+    | _ -> state
+let resetShoot state =
+    if not Console.KeyAvailable then
+        {state with canShoot = true}
+    else
+        state
+
+let proccessPlayerKeyboard key state =
+    if state.playerState = Alive then 
+        match key with 
+        | ConsoleKey.Spacebar when state.canShoot ->
+            let newMisile = {
+                x = state.PlayerX+2
+                y = state.PlayerY
+            }
+            {state  with PlayerMisiles = newMisile :: state.PlayerMisiles; canShoot = false}
+        | ConsoleKey.Spacebar -> state
+        | ConsoleKey.LeftArrow|ConsoleKey.A -> {state with PlayerX = max 0 (state.PlayerX-2) }
+        | ConsoleKey.RightArrow|ConsoleKey.D -> {state with PlayerX = min (Console.BufferWidth-2) (state.PlayerX+2) }
+        | ConsoleKey.UpArrow|ConsoleKey.W -> {state with PlayerY = max 0 (state.PlayerY-1) }
+        | ConsoleKey.DownArrow|ConsoleKey.S -> {state with PlayerY = min (Console.BufferHeight-1)(state.PlayerY+1) }
+        | _ -> state
+        |> fun newState ->
+            if state <> newState then 
+                {newState with redrawScreen = true}
+            else state
+    else state
+let updateEnemyPosition state =
+    if state.enemyState= Alive && state.tick % 4 = 0 then 
+        let nuevaY = state.enemyY+state.enemyDir
+        match nuevaY with 
+        | y when y > Console.BufferHeight-1 -> Console.BufferHeight-1,-1
+        | y when y < 0 -> 0,1
+        | y -> y, state.enemyDir
+        |> fun (y,dir) ->
+            {state with enemyY=y;enemyDir=dir;redrawScreen=true}
+    else
+        state
+
 let pipeline = [|
     updateTick
     updateClock
-    shoot
+    resetShoot
+    updatePlayerMisile
+    updateEnemyMisiles
+    updateEnemyPosition
+    agregarMisilenemigo
+    detectPlayerColission
+    detectEnemyColission
+    resetAlien
+    resetEnemigo
 |]
 let redrawPipeline = [|
     drawClock
+    drawEnemy
     drawPlayer
-    updateBulletPosition
+    drawEnemyBullet
+    drawPlayerBullet
+    drawLife
+    drawScore
 |]
 let myLoop =
     createMainLoop 
         pipeline
         (fun x -> x.programState = Running) 
         redrawPipeline
-        [|proccessPlayerKeyboard|]
+        [|proccessPlayerKeyboard;proccessGameKeyboard|]
         (fun x -> x.redrawScreen)
         (fun x -> {x with redrawScreen = false})
-// let currentState =
-//     myLoop InitialState
+    |> fun x -> x
+
 
 
 let mostrar() =
@@ -115,7 +259,7 @@ let mostrar() =
     Console.CursorVisible <- false
 
     let currentState =
-        InitialState
+        InitialState 
         |> myLoop
         
     
