@@ -38,7 +38,8 @@ let displayMessageRight y color (msg:String) =
     let x = Console.BufferWidth - msg.Length 
     displayMessage x y color msg 
     
-let path = "playerProgress.json"
+let random = Random()
+let continuePath = "playerProgress.json"
 let savingPath = "savedProgress.json"
 let maxY = Console.BufferHeight-1
 let maxX = Console.BufferWidth-1

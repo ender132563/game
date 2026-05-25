@@ -5,10 +5,13 @@ open System.IO
 open System.Text.Json
 open System.Text.Json.Serialization
 
+let options =
+    JsonFSharpOptions.Default().ToJsonSerializerOptions()
 
 type ProgramState = 
 | Running
 | Terminated
+| GameOver
 
 type spriteState =
 | Alive
@@ -36,9 +39,10 @@ type State = {
     playerColision : int
     canShoot : bool
     score: int
-    lifes: int
+    lives: int
 }
-    
+
+
 let InitialState = {
     programState = Running
     playerState = Alive
@@ -51,13 +55,13 @@ let InitialState = {
     PlayerY = Console.BufferHeight/2
     redrawScreen = true
     tick = -1 
-    clock= 0
+    clock= -1
     enemyDir = 1
     enemyColision = 0
     playerColision = 0
     canShoot = true
     score = 0
-    lifes = 3
+    lives = 3
 }
 
 let updateTick state =
@@ -84,8 +88,8 @@ let drawPlayer (state:State) =
     displayMessage state.PlayerX state.PlayerY ConsoleColor.Black sprite
 let drawScore state =
     displayMessage (maxX/2) 0 ConsoleColor.Yellow $"Score: {state.score}"
-let drawLife state =
-    displayMessage 5 0 ConsoleColor.Yellow $"Lifes: {state.lifes}"
+let drawLives state =
+    displayMessage 5 0 ConsoleColor.Yellow $"lives: {state.lives}"
         
 let detectPlayerColission state =
     state.enemyMisiles 
@@ -99,7 +103,6 @@ let detectPlayerColission state =
                 enemyMisiles = newMisiles
                 redrawScreen=true
                 playerColision=state.tick
-                lifes = max 0 state.lifes-1
                 }
         else 
             state
@@ -115,7 +118,6 @@ let detectEnemyColission state =
                 PlayerMisiles = newMisiles
                 redrawScreen=true
                 enemyColision=state.tick
-                score = state.score+1
                 }
         else 
             state
@@ -123,9 +125,9 @@ let detectEnemyColission state =
 let resetAlien state =
     if state.playerState = Hit then 
         let tiempo = state.tick-state.playerColision
-        if tiempo >= 160 then 
-            {state with playerState=Alive;redrawScreen=true}
-        else
+        if tiempo >= 80 then 
+            {state with playerState=Alive;redrawScreen=true;lives = max 0 state.lives-1}
+        else  
             state
     else
         state
@@ -133,12 +135,17 @@ let resetAlien state =
 let resetEnemigo state =
     if state.enemyState = Hit then 
         let tiempo = state.tick-state.enemyColision
-        if tiempo >= 160 then 
-            {state with enemyState=Alive;redrawScreen=true}
+        if tiempo >= 80 then 
+            {state with enemyState=Alive;redrawScreen=true;enemyY = random.Next maxY;score = state.score+1}
+        
+            
+  
         else
+            
             state
     else
         state
+
 let agregarMisilenemigo state =
     if state.enemyState = Alive && state.tick % 10 = 0 then 
         let newMisile = {
@@ -232,6 +239,10 @@ let pipeline = [|
     detectEnemyColission
     resetAlien
     resetEnemigo
+    fun state -> 
+        if state.lives < 0 then 
+            {state with programState = GameOver}
+        else state
 |]
 let redrawPipeline = [|
     drawClock
@@ -239,13 +250,13 @@ let redrawPipeline = [|
     drawPlayer
     drawEnemyBullet
     drawPlayerBullet
-    drawLife
+    drawLives
     drawScore
 |]
 let myLoop =
     createMainLoop 
         pipeline
-        (fun x -> x.programState = Running) 
+        (fun x -> if x.programState = Running then true else false) 
         redrawPipeline
         [|proccessPlayerKeyboard;proccessGameKeyboard|]
         (fun x -> x.redrawScreen)
@@ -254,17 +265,25 @@ let myLoop =
 
 
 
-let mostrar() =
+let mostrar state =
     let oldForeground = Console.ForegroundColor
     Console.CursorVisible <- false
 
     let currentState =
-        InitialState 
+        state 
         |> myLoop
-        
+        |> fun state -> {state with programState = Running}
     
 
+    let json = JsonSerializer.Serialize(currentState, options)
     Console.CursorVisible <- true
     Console.ForegroundColor <- oldForeground
     Console.Clear()
-    // File.WriteAllText (path,json)
+    File.WriteAllText (continuePath,json)
+    currentState.programState
+
+// let continuar =
+//     JsonSerializer.Deserialize<State>(continuePath,options)
+    
+ 
+    

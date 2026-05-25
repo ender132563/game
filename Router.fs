@@ -9,20 +9,21 @@ type GameState =
 | StartGame
 | Pause
 | LoadGame
+| ContinueGame
 | SaveGame
 | Terminated
-
+| GameOver
 
     
 
 let initialState = ShowingMenu
 
 
-// let loadState = File.ReadAllText (Generic.Utils.path)
-// let lastState = JsonSerializer.Deserialize (loadState)
 
 
 let rec routerLoop state =
+    let jsonString = File.ReadAllText Generic.Utils.continuePath
+    let lastState = JsonSerializer.Deserialize<Game.State>(jsonString,Game.options)
     match state with 
     | ShowingMenu -> 
         match MainMenu.showMenu() with 
@@ -31,19 +32,28 @@ let rec routerLoop state =
         | MainMenu.Exit -> Terminated
         
     | StartGame -> 
-        Game.mostrar()
-        Pause
+        match Game.mostrar Game.InitialState with 
+        | Game.GameOver -> GameOver
+        | _ -> Pause
     | Pause -> 
 
         match Pause.menu() with 
-        | Pause.Continue -> LoadGame
+        | Pause.Continue -> ContinueGame
         | Pause.SaveGame -> SaveGame
         | Pause.Exit -> ShowingMenu
+    |ContinueGame ->
+
+        match Game.mostrar lastState with
+        | Game.GameOver -> GameOver
+        | _ -> Pause
+           
     | SaveGame  
     | LoadGame 
-        // Game.reanudar lastState |> ignore
-        // Pause
     | Terminated -> Terminated
+    | GameOver -> 
+        match GameOverMenu.menu() with
+        | GameOverMenu.NewGame -> StartGame
+        | GameOverMenu.Exit -> Terminated
 
     |> fun s -> 
         if s <> Terminated then 

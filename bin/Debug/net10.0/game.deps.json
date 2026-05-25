@@ -8,7 +8,8 @@
     ".NETCoreApp,Version=v10.0": {
       "game/1.0.0": {
         "dependencies": {
-          "FSharp.Core": "10.0.102"
+          "FSharp.Core": "10.0.102",
+          "FSharp.SystemTextJson": "1.4.36"
         },
         "runtime": {
           "game.dll": {}
@@ -62,6 +63,17 @@
             "locale": "zh-Hant"
           }
         }
+      },
+      "FSharp.SystemTextJson/1.4.36": {
+        "dependencies": {
+          "FSharp.Core": "10.0.102"
+        },
+        "runtime": {
+          "lib/netstandard2.0/FSharp.SystemTextJson.dll": {
+            "assemblyVersion": "1.4.0.0",
+            "fileVersion": "1.4.36.44143"
+          }
+        }
       }
     }
   },
@@ -77,6 +89,13 @@
       "sha512": "sha512-umz5pbtOvL/F9U5sibhREzZT2ewAs//nRTMwj8XcOOjMdOP828tipLpEhb2fZNijhiyikJ6Nr/dsMc/lj58W9w==",
       "path": "fsharp.core/10.0.102",
       "hashPath": "fsharp.core.10.0.102.nupkg.sha512"
+    },
+    "FSharp.SystemTextJson/1.4.36": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1xLk0SBF1nedD74B77rcArjD2d+DeZwbNI7BVCAyKwIBERo1VoX8Mf4AtX0OV2L3ZeM/XS1b6BuhXCyoh0KBnw==",
+      "path": "fsharp.systemtextjson/1.4.36",
+      "hashPath": "fsharp.systemtextjson.1.4.36.nupkg.sha512"
     }
   }
 }

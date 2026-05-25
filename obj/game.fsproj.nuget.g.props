@@ -14,5 +14,6 @@
   </ItemGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <PkgFSharp_Core Condition=" '$(PkgFSharp_Core)' == '' ">C:\Users\ASUS\.nuget\packages\fsharp.core\10.0.102</PkgFSharp_Core>
+    <PkgFSharp_SystemTextJson Condition=" '$(PkgFSharp_SystemTextJson)' == '' ">C:\Users\ASUS\.nuget\packages\fsharp.systemtextjson\1.4.36</PkgFSharp_SystemTextJson>
   </PropertyGroup>
 </Project>
