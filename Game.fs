@@ -279,7 +279,7 @@ let mostrar state =
     Console.CursorVisible <- true
     Console.ForegroundColor <- oldForeground
     Console.Clear()
-    File.WriteAllText (continuePath,json)
+    File.WriteAllText (cache,json)
     currentState.programState
 
 // let continuar =

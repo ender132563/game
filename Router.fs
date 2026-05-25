@@ -2,7 +2,7 @@ module App.Router
 open System.IO
 open System.Text.Json
 open System.Text.Json.Serialization
-
+open Generic.Utils
 open App
 type GameState =
 | ShowingMenu
@@ -22,8 +22,11 @@ let initialState = ShowingMenu
 
 
 let rec routerLoop state =
-    let jsonString = File.ReadAllText Generic.Utils.continuePath
+
+    let jsonString = File.ReadAllText cache
     let lastState = JsonSerializer.Deserialize<Game.State>(jsonString,Game.options)
+    
+
     match state with 
     | ShowingMenu -> 
         match MainMenu.showMenu() with 
@@ -41,14 +44,23 @@ let rec routerLoop state =
         | Pause.Continue -> ContinueGame
         | Pause.SaveGame -> SaveGame
         | Pause.Exit -> ShowingMenu
+
     |ContinueGame ->
 
         match Game.mostrar lastState with
         | Game.GameOver -> GameOver
         | _ -> Pause
            
-    | SaveGame  
-    | LoadGame 
+    | SaveGame ->
+        File.WriteAllText (savingPath,jsonString)
+        Pause
+    | LoadGame ->
+        let jsonSavedGameString = File.ReadAllText savingPath
+        let savedState = JsonSerializer.Deserialize<Game.State>(jsonSavedGameString,Game.options)
+        match Game.mostrar savedState with 
+        | Game.GameOver -> GameOver
+        | _ -> Pause
+
     | Terminated -> Terminated
     | GameOver -> 
         match GameOverMenu.menu() with
