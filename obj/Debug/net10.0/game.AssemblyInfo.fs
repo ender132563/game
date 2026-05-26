@@ -10,7 +10,7 @@ open System.Reflection
 [<assembly: System.Reflection.AssemblyCompanyAttribute("game")>]
 [<assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")>]
 [<assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")>]
-[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+202216d29fdd456f6d07b19152c5f2939649d001")>]
+[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+05964da815563da08be3237271ed1f530900b33f")>]
 [<assembly: System.Reflection.AssemblyProductAttribute("game")>]
 [<assembly: System.Reflection.AssemblyTitleAttribute("game")>]
 [<assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")>]

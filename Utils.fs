@@ -43,3 +43,5 @@ let cache = "playerProgress.json"
 let savingPath = "savedProgress.json"
 let maxY = Console.BufferHeight-1
 let maxX = Console.BufferWidth-1
+
+

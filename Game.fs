@@ -126,7 +126,7 @@ let resetAlien state =
     if state.playerState = Hit then 
         let tiempo = state.tick-state.playerColision
         if tiempo >= 80 then 
-            {state with playerState=Alive;redrawScreen=true;lives = max 0 state.lives-1}
+            {state with playerState=Alive;redrawScreen=true;lives = state.lives-1}
         else  
             state
     else
@@ -272,15 +272,16 @@ let mostrar state =
     let currentState =
         state 
         |> myLoop
-        |> fun state -> {state with programState = Running}
     
+    let stateForSaving =
+        currentState |> fun s -> {s with programState = Running}
 
-    let json = JsonSerializer.Serialize(currentState, options)
+    let json = JsonSerializer.Serialize(stateForSaving, options)
     Console.CursorVisible <- true
     Console.ForegroundColor <- oldForeground
     Console.Clear()
     File.WriteAllText (cache,json)
-    currentState.programState
+    currentState.programState 
 
 // let continuar =
 //     JsonSerializer.Deserialize<State>(continuePath,options)
