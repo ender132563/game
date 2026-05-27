@@ -16,47 +16,53 @@ type commands =
 // type state = {
 //     Rocks : rock list
 // }
+// let initialState = {
+//     Rocks = []
+// }
 // let updateRock state =
-//     if state.Rocks <> [] then 
-//         state.Rocks
-//         |> Seq.map (fun rock -> {rock with y=rock.y+1})
-//         |> Seq.filter (fun rock -> rock.y  < Console.BufferWidth-2)
-//         |> Seq.toList
-//         |> fun newRocks ->
-//             {state with Rocks = newRocks}  
-//     else state
+//     state.Rocks
+//     |> Seq.map (fun rock -> {rock with y=rock.y+1})
+//     |> Seq.filter (fun rock -> rock.y  < Console.BufferHeight-2)
+//     |> Seq.toList
+//     |> fun newRocks ->
+//         {state with Rocks = newRocks}  
 // let agregarMisilenemigo state =
 //     let newRock = {
-//         x = random.Next(maxX)
+//         x = random.Next maxX
 //         y = 0
 //     } 
 //     {state with  Rocks = newRock :: state.Rocks}
 
-let menu() =
-    genericMenu
-        20
-        (Console.BufferHeight*3/4-1)
-        [|  
-            NewGame,"NewGame"
-            Exit,"Exit"
-        |]
-        "⚰️"
-        ConsoleColor.DarkRed
-        Titles.gameOverTitle
-        ConsoleColor.Red
-        (20,15)
-
-    
 // let rec rain state = 
 //     async {
+//         do! Async.Sleep 25
 //         let newState =
+
 //             state
+//             |> agregarMisilenemigo
 //             |> updateRock
-//             |>
-
-//         do! Async.Sleep 200
-
+//             |> fun state -> 
+//                 state.Rocks 
+//                 |> List.iter (fun rock -> displayMessage rock.x rock.y ConsoleColor.Blue "🩸")
+//                 state
 //         return! rain newState
 //     }
-
-// rock()|> Async.StartImmediate
+let menu() =
+    
+    // rain initialState |> Async.StartImmediate
+    let manu =
+        genericMenu
+                20
+                (Console.BufferHeight*3/4-1)
+                [|  
+                    NewGame,"NewGame"
+                    Exit,"Exit"
+                |]
+                "⚰️"
+                ConsoleColor.DarkRed
+                Titles.gameOverTitle
+                ConsoleColor.Red
+                (20,15)
+        
+    manu
+    

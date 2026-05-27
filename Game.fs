@@ -61,7 +61,7 @@ let InitialState = {
     playerColision = 0
     canShoot = true
     score = 0
-    lives = 3
+    lives = 1
 }
 
 let updateTick state =
@@ -107,21 +107,22 @@ let detectPlayerColission state =
         else 
             state
 let detectEnemyColission state =
-    state.PlayerMisiles 
-    |> Seq.filter (fun misile -> 
-        not (misile.x = state.enemyX-1 && misile.y = state.enemyY))
-    |> Seq.toList 
-    |> fun newMisiles -> 
-        if newMisiles.Length <> state.PlayerMisiles.Length then
-            {state with 
-                enemyState = Hit
-                PlayerMisiles = newMisiles
-                redrawScreen=true
-                enemyColision=state.tick
-                }
-        else 
-            state
-
+    if not (state.enemyState = Hit) then 
+        state.PlayerMisiles 
+        |> Seq.filter (fun misile -> 
+            not (misile.x = state.enemyX-1 && misile.y = state.enemyY))
+        |> Seq.toList 
+        |> fun newMisiles -> 
+            if newMisiles.Length <> state.PlayerMisiles.Length then
+                {state with 
+                    enemyState = Hit
+                    PlayerMisiles = newMisiles
+                    redrawScreen=true
+                    enemyColision=state.tick
+                    }
+            else 
+                state
+    else state
 let resetAlien state =
     if state.playerState = Hit then 
         let tiempo = state.tick-state.playerColision
@@ -136,20 +137,21 @@ let resetEnemigo state =
     if state.enemyState = Hit then 
         let tiempo = state.tick-state.enemyColision
         if tiempo >= 80 then 
-            {state with enemyState=Alive;redrawScreen=true;enemyY = random.Next maxY;score = state.score+1}
-        
-            
-  
+            {state with enemyState=Alive;redrawScreen=true;enemyY = random.Next maxY}
         else
             
             state
     else
         state
-
+let updateScoreAndLives state =
+    match state with 
+    | state when state.enemyState = Hit -> {state with score = state.score+1}
+    | state when state.playerState = Hit -> {state with lives = state.lives-1}
+    | _ -> state
 let agregarMisilenemigo state =
     if state.enemyState = Alive && state.tick % 10 = 0 then 
         let newMisile = {
-            x = state.enemyX
+            x = state.enemyX-2
             y = state.enemyY
         }
         
@@ -206,8 +208,8 @@ let proccessPlayerKeyboard key state =
             {state  with PlayerMisiles = newMisile :: state.PlayerMisiles; canShoot = false}
         | ConsoleKey.Spacebar -> state
         | ConsoleKey.LeftArrow|ConsoleKey.A -> {state with PlayerX = max 0 (state.PlayerX-2) }
-        | ConsoleKey.RightArrow|ConsoleKey.D -> {state with PlayerX = min (Console.BufferWidth-2) (state.PlayerX+2) }
-        | ConsoleKey.UpArrow|ConsoleKey.W -> {state with PlayerY = max 0 (state.PlayerY-1) }
+        | ConsoleKey.RightArrow|ConsoleKey.D -> {state with PlayerX = min (Console.BufferWidth-3) (state.PlayerX+2) }
+        | ConsoleKey.UpArrow|ConsoleKey.W -> {state with PlayerY = max 1 (state.PlayerY-1) }
         | ConsoleKey.DownArrow|ConsoleKey.S -> {state with PlayerY = min (Console.BufferHeight-1)(state.PlayerY+1) }
         | _ -> state
         |> fun newState ->
@@ -216,16 +218,12 @@ let proccessPlayerKeyboard key state =
             else state
     else state
 let updateEnemyPosition state =
-    if state.enemyState= Alive && state.tick % 4 = 0 then 
-        let nuevaY = state.enemyY+state.enemyDir
-        match nuevaY with 
-        | y when y > Console.BufferHeight-1 -> Console.BufferHeight-1,-1
-        | y when y < 0 -> 0,1
-        | y -> y, state.enemyDir
-        |> fun (y,dir) ->
-            {state with enemyY=y;enemyDir=dir;redrawScreen=true}
+    if state.enemyState = Alive then 
+        let height = float Console.BufferHeight+1.0
+        let nuevaY = height/2.0 + height/2.2 * Math.Sin(float state.tick * 0.02 ) |> int
+        {state with enemyY = nuevaY; redrawScreen = true}
     else
-        state
+            state
 
 let pipeline = [|
     updateTick
@@ -237,6 +235,7 @@ let pipeline = [|
     agregarMisilenemigo
     detectPlayerColission
     detectEnemyColission
+    updateScoreAndLives
     resetAlien
     resetEnemigo
     fun state -> 

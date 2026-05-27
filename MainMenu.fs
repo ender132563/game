@@ -22,5 +22,5 @@ let showMenu()=
         "☠️"
         ConsoleColor.Red
         Titles.mainTitle
-        ConsoleColor.Green
+        ConsoleColor.Blue
         (15,15)
