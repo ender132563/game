@@ -61,7 +61,7 @@ let InitialState = {
     playerColision = 0
     canShoot = true
     score = 0
-    lives = 1
+    lives = 3
 }
 
 let updateTick state =
@@ -91,43 +91,46 @@ let drawScore state =
 let drawLives state =
     displayMessage 5 0 ConsoleColor.Yellow $"lives: {state.lives}"
         
+let applyCollision state missiles hitCondition updateStateWhenHit =
+    let newMisiles = missiles |> List.filter (fun misile -> not (hitCondition misile))
+    if newMisiles.Length <> missiles.Length then
+        updateStateWhenHit newMisiles
+    else state
+
 let detectPlayerColission state =
-    state.enemyMisiles 
-    |> Seq.filter (fun misile -> 
-        not (misile.x = state.PlayerX-1 && misile.y = state.PlayerY))
-    |> Seq.toList
-    |> fun newMisiles -> 
-        if newMisiles.Length <> state.enemyMisiles.Length then
-            {state with 
-                playerState = Hit
-                enemyMisiles = newMisiles
-                redrawScreen=true
-                playerColision=state.tick
-                }
-        else 
-            state
+    if state.playerState <> Hit then 
+        applyCollision 
+            state 
+            state.enemyMisiles
+            (fun misile -> misile.x = state.PlayerX - 1 && misile.y = state.PlayerY)
+            (fun newMisiles ->
+                {state with
+                    playerState = Hit
+                    enemyMisiles = newMisiles
+                    redrawScreen = true
+                    playerColision = state.tick
+                    lives = state.lives-1})
+    else state
 let detectEnemyColission state =
-    if not (state.enemyState = Hit) then 
-        state.PlayerMisiles 
-        |> Seq.filter (fun misile -> 
-            not (misile.x = state.enemyX-1 && misile.y = state.enemyY))
-        |> Seq.toList 
-        |> fun newMisiles -> 
-            if newMisiles.Length <> state.PlayerMisiles.Length then
-                {state with 
+    if state.enemyState <> Hit then
+        applyCollision 
+            state 
+            state.PlayerMisiles
+            (fun misile -> misile.x = state.enemyX - 1 && misile.y = state.enemyY)
+            (fun newMisiles ->
+                {state with
                     enemyState = Hit
                     PlayerMisiles = newMisiles
-                    redrawScreen=true
-                    enemyColision=state.tick
-                    }
-            else 
-                state
+                    redrawScreen = true
+                    enemyColision = state.tick
+                    score = state.score+1})
     else state
+
 let resetAlien state =
     if state.playerState = Hit then 
         let tiempo = state.tick-state.playerColision
         if tiempo >= 80 then 
-            {state with playerState=Alive;redrawScreen=true;lives = state.lives-1}
+            {state with playerState=Alive;redrawScreen=true}
         else  
             state
     else
@@ -143,11 +146,7 @@ let resetEnemigo state =
             state
     else
         state
-let updateScoreAndLives state =
-    match state with 
-    | state when state.enemyState = Hit -> {state with score = state.score+1}
-    | state when state.playerState = Hit -> {state with lives = state.lives-1}
-    | _ -> state
+
 let agregarMisilenemigo state =
     if state.enemyState = Alive && state.tick % 10 = 0 then 
         let newMisile = {
@@ -191,11 +190,6 @@ let proccessGameKeyboard key state =
     match key with
     | ConsoleKey.Escape -> {state with programState = Terminated} 
     | _ -> state
-let resetShoot state =
-    if not Console.KeyAvailable then
-        {state with canShoot = true}
-    else
-        state
 
 let proccessPlayerKeyboard key state =
     if state.playerState = Alive then 
@@ -224,6 +218,11 @@ let updateEnemyPosition state =
         {state with enemyY = nuevaY; redrawScreen = true}
     else
             state
+let resetShoot state =
+    if not Console.KeyAvailable then
+        {state with canShoot = true}
+    else
+        state
 
 let pipeline = [|
     updateTick
@@ -235,7 +234,6 @@ let pipeline = [|
     agregarMisilenemigo
     detectPlayerColission
     detectEnemyColission
-    updateScoreAndLives
     resetAlien
     resetEnemigo
     fun state -> 
@@ -255,7 +253,7 @@ let redrawPipeline = [|
 let myLoop =
     createMainLoop 
         pipeline
-        (fun x -> if x.programState = Running then true else false) 
+        (fun x -> x.programState = Running)
         redrawPipeline
         [|proccessPlayerKeyboard;proccessGameKeyboard|]
         (fun x -> x.redrawScreen)
@@ -282,8 +280,6 @@ let mostrar state =
     File.WriteAllText (cache,json)
     currentState.programState 
 
-// let continuar =
-//     JsonSerializer.Deserialize<State>(continuePath,options)
-    
+
  
     

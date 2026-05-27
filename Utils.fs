@@ -2,12 +2,12 @@ module Generic.Utils
 open System.Threading
 open System
 
-let createMainLoop pipeline isProgramRunning  redrawPipeline keypipeline needToRedraw clearRedraw =
+let createMainLoop pipeline isProgramRunning redrawPipeline keypipeline needToRedraw clearRedraw =
     let processKeyboard (state:'state)=
         if Console.KeyAvailable then 
             let k = Console.ReadKey true 
             keypipeline
-            |> Array.fold ( fun acc f -> f k.Key acc) state
+            |> Array.fold (fun acc f -> f k.Key acc) state
         else state
     let redrawScreen (state:'state)=
         if needToRedraw state then 
