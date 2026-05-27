@@ -13,7 +13,7 @@ type GameState =
 | SaveGame
 | Terminated
 | GameOver
-
+| YouWin
     
 
 let initialState = ShowingMenu
@@ -37,6 +37,7 @@ let rec routerLoop state =
     | StartGame -> 
         match Game.mostrar Game.InitialState with 
         | Game.GameOver -> GameOver
+        | Game.YouWin -> YouWin
         | _ -> Pause
     | Pause -> 
 
@@ -65,8 +66,10 @@ let rec routerLoop state =
     | GameOver -> 
         match GameOverMenu.menu() with
         | GameOverMenu.NewGame -> StartGame
-        | GameOverMenu.Exit -> Terminated
-
+        | GameOverMenu.Exit -> ShowingMenu
+    | YouWin -> 
+        match YouWin.menu() with 
+        | YouWin.Exit -> ShowingMenu
     |> fun s -> 
         if s <> Terminated then 
             routerLoop s

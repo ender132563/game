@@ -53,7 +53,7 @@ let menu() =
     let manu =
         genericMenu
                 20
-                (Console.BufferHeight*3/4-1)
+                (Console.BufferHeight*4/5-1)
                 [|  
                     NewGame,"NewGame"
                     Exit,"Exit"
@@ -62,7 +62,7 @@ let menu() =
                 ConsoleColor.DarkRed
                 Titles.gameOverTitle
                 ConsoleColor.Red
-                (20,15)
+                (Console.BufferWidth/2,Console.BufferHeight*1/4-1)
         
     manu
     

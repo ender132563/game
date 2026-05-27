@@ -12,6 +12,7 @@ type ProgramState =
 | Running
 | Terminated
 | GameOver
+| YouWin
 
 type spriteState =
 | Alive
@@ -55,12 +56,12 @@ let InitialState = {
     PlayerY = Console.BufferHeight/2
     redrawScreen = true
     tick = -1 
-    clock= -1
+    clock= 40
     enemyDir = 1
     enemyColision = 0
     playerColision = 0
     canShoot = true
-    score = 0
+    score = 5
     lives = 3
 }
 
@@ -68,10 +69,11 @@ let updateTick state =
     {state with tick = state.tick+1}
 let updateClock state =
     if state.tick % 40 = 0 then 
-        {state with clock = state.clock+1;redrawScreen = true}
+        {state with clock = state.clock-1;redrawScreen = true}
     else state 
 let drawClock state = 
-    displayMessage (maxX-8) 0 ConsoleColor.Yellow $"Time: {state.clock}"
+    if state.clock >= 0 then
+        displayMessage (maxX-8) 0 ConsoleColor.Yellow $"Time: {state.clock}"
 
 let drawEnemy state =
     let sprite =
@@ -87,9 +89,11 @@ let drawPlayer (state:State) =
         else "⚰️"
     displayMessage state.PlayerX state.PlayerY ConsoleColor.Black sprite
 let drawScore state =
-    displayMessage (maxX/2) 0 ConsoleColor.Yellow $"Score: {state.score}"
+    if state.score >= 0 then
+        displayMessage (maxX/2) 0 ConsoleColor.Yellow $"EnemyLives: {state.score}"
 let drawLives state =
-    displayMessage 5 0 ConsoleColor.Yellow $"lives: {state.lives}"
+    if state.lives >= 0 then 
+        displayMessage 5 0 ConsoleColor.Yellow $"Playerlives: {state.lives}"
         
 let applyCollision state missiles hitCondition updateStateWhenHit =
     let newMisiles = missiles |> List.filter (fun misile -> not (hitCondition misile))
@@ -123,7 +127,7 @@ let detectEnemyColission state =
                     PlayerMisiles = newMisiles
                     redrawScreen = true
                     enemyColision = state.tick
-                    score = state.score+1})
+                    score = state.score-1})
     else state
 
 let resetAlien state =
@@ -225,6 +229,14 @@ let resetShoot state =
         state
 
 let pipeline = [|
+    fun state -> 
+        if state.lives < 0 || state.clock < 0 then 
+            {state with programState = GameOver}
+        else state
+    fun state -> 
+        if state.score < 0 then 
+            {state with programState = YouWin}
+        else state
     updateTick
     updateClock
     resetShoot
@@ -236,19 +248,15 @@ let pipeline = [|
     detectEnemyColission
     resetAlien
     resetEnemigo
-    fun state -> 
-        if state.lives < 0 then 
-            {state with programState = GameOver}
-        else state
 |]
 let redrawPipeline = [|
     drawClock
-    drawEnemy
-    drawPlayer
-    drawEnemyBullet
-    drawPlayerBullet
     drawLives
     drawScore
+    drawEnemy
+    drawPlayer
+    drawPlayerBullet
+    drawEnemyBullet
 |]
 let myLoop =
     createMainLoop 

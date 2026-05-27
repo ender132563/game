@@ -13,14 +13,14 @@ let showMenu()=
     
     genericMenu 
         20
-        (Console.BufferHeight*3/4-1)
+        (Console.BufferHeight*4/5-1)
         [|
             NewGame,"New Game"
             LoadGame,"Load Game"
             Exit,"Exit"
         |] 
         "☠️"
-        ConsoleColor.Red
-        Titles.mainTitle
         ConsoleColor.Blue
-        (15,15)
+        Titles.mainTitle
+        ConsoleColor.Green
+        (Console.BufferWidth/2,Console.BufferHeight*1/4-1)
